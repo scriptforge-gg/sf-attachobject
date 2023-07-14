@@ -3,7 +3,7 @@
 # sf-attachobject
 It's a powerful script for FiveM that allows players to easily and intuitively attach props to their in-game characters, even when the server is running in entity lockdown mode.
 
-With **sf-attachobject** developers have the ability to attach various props to their players character's body. This script provides a seamless and user-friendly interface, making the process of attaching props effortless.
+With **sf-attachobject** developers have the ability to attach various props to their players character's body. This script provides a seamless and user-friendly API, making the process of attaching props effortless.
 
 # Download
 Click [here](https://github.com/scriptforge-gg/sf-attachobject/releases) to go to the releases page and download it.
