@@ -162,8 +162,13 @@ function ClearPlayerObjects(playerId, objectName)
     if not PlayerObjects[playerId] then return false end
     local objsToRemove = {}
 
+    local objectNameHashed = nil
+    if objectName ~= nil then
+        objectNameHashed = joaat(objectName)
+    end
+
     for objectId, hash in pairs(PlayerObjects[playerId]) do
-        if not objectName or (objectName == hash) then
+        if not objectName or (objectNameHashed == hash) then
             objsToRemove[#objsToRemove + 1] = objectId
             PlayerObjects[playerId][objectId] = nil
             Objects[objectId] = nil
