@@ -155,6 +155,7 @@ function CreateObj(objectId)
                     local coords = GetEntityCoords(data.ped)
                     ReqModel(objData[1])
                     data.handle = CreateObjectNoOffset(objData[1], coords.x, coords.y, coords.z, false, false, false)
+                    SetEntityAsMissionEntity(data.handle, true, true)
                     if objData[5] then SetEntityCollision(data.handle, false, false) end
                     if objData[6] then SetEntityCompletelyDisableCollision(data.handle, true, true) end
 
