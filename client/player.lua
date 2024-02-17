@@ -1,43 +1,69 @@
-local RegisteredObjects = {}
-local Objects = {}
 local ScopedPlayers = {}
 local PlayerToObjects = {}
 local ToRemoveObjects = {}
-
-local myId = tostring(GetPlayerServerId(PlayerId()))
-local loaded = true
+local Objects = {}
 
 Citizen.CreateThread(function()
     local plaIds = GetActivePlayers()
     for i = 1, #plaIds do
         ScopedPlayers[tostring(GetPlayerServerId(plaIds[i]))] = true
     end
-    ScopedPlayers[myId] = nil
-
-    TriggerServerEvent("sf-attachobject:ready")
+    ScopedPlayers[MyServerId] = nil
 end)
+
+local function createObj(objectId)
+    local data = Objects[objectId]
+    if data then
+        if data.handle and DoesEntityExist(data.handle) then
+            return
+        end
+
+        local objData = RegisteredObjects[data.objectName]
+        if objData == nil then return end
+
+        local player = GetPlayerFromServerId(tonumber(data.playerId))
+        if player == -1 and MyServerId ~= data.playerId then return false end
+        data.ped = GetPlayerPed(player)
+
+        if DoesEntityExist(data.ped) then
+            if IsEntityVisible(data.ped) then
+                local coords = GetEntityCoords(data.ped)
+                ReqModel(objData[1])
+                data.handle = CreateObjectNoOffset(objData[1], coords.x, coords.y, coords.z, false, false, false)
+                SetEntityAsMissionEntity(data.handle, true, true)
+                if objData[5] then SetEntityCollision(data.handle, false, false) end
+                if objData[6] then SetEntityCompletelyDisableCollision(data.handle, true, true) end
+
+                AttachEntityToEntity(data.handle, data.ped, GetPedBoneIndex(data.ped, objData[4]), objData[2].x, objData[2].y, objData[2].z, objData[3].x, objData[3].y, objData[3].z, true, true, false, true, 1, true)
+            end
+        end
+        return true
+    end
+
+    return false
+end
+
+local function removeObject(objectId)
+    if Objects[objectId] then
+        if PlayerToObjects[Objects[objectId].playerId] then
+            PlayerToObjects[Objects[objectId].playerId][objectId] = nil
+        end
+
+        if Objects[objectId].handle ~= nil then
+            DeleteEntity_2(Objects[objectId].handle)
+        end
+
+        Objects[objectId] = nil
+    end
+end
 
 AddEventHandler("onResourceStop", function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
     for id, object in pairs(Objects) do
         if(object.handle and DoesEntityExist(object.handle)) then
-            RemoveObject(object.handle)
+            removeObject(object.handle)
         end
     end
-end)
-
-RegisterNetEvent("sf-attachobject:registerObject", function (name, object)
-    if RegisteredObjects[name] ~= nil then return end
-    RegisteredObjects[name] = object
-end)
-
-RegisterNetEvent("sf-attachobject:unregisterObject", function (name)
-    if RegisteredObjects[name] == nil then return end
-    RegisteredObjects[name] = nil
-end)
-
-RegisterNetEvent("sf-attachobject:registeredObjects", function(objects)
-    RegisteredObjects = objects
 end)
 
 RegisterNetEvent("sf-attachobject:internal:addObject", function(objectId, playerId, objectName)
@@ -52,17 +78,17 @@ RegisterNetEvent("sf-attachobject:internal:addObject", function(objectId, player
 
     if PlayerToObjects[objectData.playerId] == nil then PlayerToObjects[objectData.playerId] = {} end
     PlayerToObjects[objectData.playerId][objectId] = true
-    if ScopedPlayers[objectData.playerId] or objectData.playerId == myId  then
-        CreateObj(objectId)
+    if ScopedPlayers[objectData.playerId] or objectData.playerId == MyServerId  then
+        createObj(objectId)
     end
 end)
 
 RegisterNetEvent("sf-attachobject:internal:removeObject", function(objectId)
     if type(objectId) == "string" then
-        RemoveObject(objectId)
+        removeObject(objectId)
     else
         for i=1, #objectId do
-            RemoveObject(objectId[i])
+            removeObject(objectId[i])
         end
     end
 end)
@@ -80,7 +106,7 @@ RegisterNetEvent("onPlayerJoining", function(playerId)
                     break
                 end
                 counter = counter + 1
-                CreateObj(objectId)
+                createObj(objectId)
                 if counter > 1 then
                     Citizen.Wait(100)
                 end
@@ -112,78 +138,14 @@ RegisterNetEvent("sf-attachobject:propfix", function()
         end
     end
 
-    if PlayerToObjects[myId] then
-        for objectId, _ in pairs(PlayerToObjects[myId]) do
+    if PlayerToObjects[MyServerId] then
+        for objectId, _ in pairs(PlayerToObjects[MyServerId]) do
             if Objects[objectId].handle == nil or (not DoesEntityExist(Objects[objectId].handle)) then
-                CreateObj(objectId)
+                createObj(objectId)
             end
         end
     end
 end)
-
-function RemoveObject(objectId)
-    if Objects[objectId] then
-        if PlayerToObjects[Objects[objectId].playerId] then
-            PlayerToObjects[Objects[objectId].playerId][objectId] = nil
-        end
-
-        if Objects[objectId].handle ~= nil then
-            DeleteEntity_2(Objects[objectId].handle)
-        end
-
-        Objects[objectId] = nil
-    end
-end
-
-function CreateObj(objectId)
-    if loaded then
-        local data = Objects[objectId]
-        if data then
-            if data.handle and DoesEntityExist(data.handle) then
-                return
-            end
-
-            local objData = RegisteredObjects[data.objectName]
-            if objData == nil then return end
-
-            local player = GetPlayerFromServerId(tonumber(data.playerId))
-            if player == -1 and myId ~= data.playerId then return false end
-            data.ped = GetPlayerPed(player)
-
-            if DoesEntityExist(data.ped) then
-                if IsEntityVisible(data.ped) then
-                    local coords = GetEntityCoords(data.ped)
-                    ReqModel(objData[1])
-                    data.handle = CreateObjectNoOffset(objData[1], coords.x, coords.y, coords.z, false, false, false)
-                    SetEntityAsMissionEntity(data.handle, true, true)
-                    if objData[5] then SetEntityCollision(data.handle, false, false) end
-                    if objData[6] then SetEntityCompletelyDisableCollision(data.handle, true, true) end
-
-                    AttachEntityToEntity(data.handle, data.ped, GetPedBoneIndex(data.ped, objData[4]), objData[2].x, objData[2].y, objData[2].z, objData[3].x, objData[3].y, objData[3].z, true, true, false, true, 1, true)
-                end
-            end
-            return true
-        end
-    end
-
-    return false
-end
-
-function ReqModel(modelHash)
-    if not HasModelLoaded(modelHash) then
-        local timeout = 0
-        RequestModel(modelHash)
-        while not HasModelLoaded(modelHash) and timeout < 60 do
-            timeout = timeout + 1
-            Citizen.Wait(0)
-        end
-    end
-end
-
-function DeleteEntity_2(handle)
-    SetEntityAsMissionEntity(handle, true, true)
-    DeleteEntity(handle)
-end
 
 Citizen.CreateThread(function()
     while true do
@@ -192,10 +154,10 @@ Citizen.CreateThread(function()
                 if PlayerToObjects[playerId] then
                     for objectId, _ in pairs(PlayerToObjects[tostring(playerId)]) do
                         if Objects[objectId].handle == nil or (not DoesEntityExist(Objects[objectId].handle)) then
-                            CreateObj(objectId)
+                            createObj(objectId)
                         else
                             if not IsEntityAttached(Objects[objectId].handle) then
-                                if Objects[objectId].handle ~= 0 then RemoveObject(Objects[objectId].handle) end
+                                if Objects[objectId].handle ~= 0 then removeObject(Objects[objectId].handle) end
                                 Objects[objectId].handle = nil
                             end
                         end

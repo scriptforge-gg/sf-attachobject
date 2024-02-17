@@ -12,8 +12,21 @@ server_exports {
 	"RegisterObject",
 	"UnregisterObject",
 	"GetObjectsOnPlayer",
-	"FixPlayerProps"
+	"FixPlayerProps",
+	"CreateVehicleAttachObject",
+	"RemoveVehicleAttachObject",
+	"GetObjectsOnVehicle",
+	"ClearVehicleObjects",
 }
 
-client_script "client.lua"
-server_script "server.lua"
+client_scripts {
+	"client/client.lua",
+	"client/player.lua",
+	"client/vehicle.lua"
+}
+
+server_scripts {
+	"server/server.lua",
+	"server/player.lua",
+	"server/vehicle.lua"
+}
