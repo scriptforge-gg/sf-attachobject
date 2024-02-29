@@ -1,4 +1,5 @@
-local PlayerObjects = {}
+local Objects = {}
+PlayerObjects = {}
 
 ---@param playerId string
 ---@param objectName string
@@ -13,12 +14,16 @@ function CreateAttachObject(playerId, objectName)
 
     local objectId = GetObjectId()
     local nameHash = joaat(objectName)
-    Objects[objectId] = nameHash
+    Objects[objectId] = {
+        playerId = playerId,
+        objectName = nameHash,
+        objectId = objectId
+    }
 
     if PlayerObjects[playerId] == nil then PlayerObjects[playerId] = {} end
     PlayerObjects[playerId][objectId] = nameHash
 
-    TriggerClientEvent("sf-attachobject:internal:addObject", -1, objectId, playerId, Objects[objectId])
+    TriggerClientEvent("sf-attachobject:internal:addObject", -1, objectId, playerId, nameHash)
 
     return objectId
 end
@@ -100,6 +105,10 @@ end
 function FixPlayerProps(playerId)
     TriggerClientEvent("sf-attachobject:propfix", tonumber(playerId))
 end
+
+RegisterNetEvent("sf-attachobject:ready", function()
+    TriggerClientEvent("sf-attachobject:playerObjects", source, Objects)
+end)
 
 AddEventHandler("playerDropped", function()
     local playerId = tostring(source)

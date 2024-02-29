@@ -1,5 +1,4 @@
 RegisteredObjects = {}
-Objects = {}
 
 local readyPlayers = {}
 local objectId = 0
@@ -90,6 +89,10 @@ RegisterNetEvent("sf-attachobject:ready", function()
         readyPlayers[playerId] = true
         ---@diagnostic disable-next-line: param-type-mismatch
         TriggerClientEvent("sf-attachobject:registeredObjects", tonumber(playerId), RegisteredObjects)
+        ---@diagnostic disable-next-line: param-type-mismatch
+        TriggerClientEvent("sf-attachobject:getPlayerObjects", tonumber(playerId), PlayerObjects)
+        ---@diagnostic disable-next-line: param-type-mismatch
+        TriggerClientEvent("sf-attachobject:getVehicleObjects", tonumber(playerId), VehicleObjectsNetId)
     end
 end)
 

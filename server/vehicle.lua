@@ -1,4 +1,7 @@
-local VehicleObjects = {}
+local Objects = {}
+
+VehicleObjects = {}
+VehicleObjectsNetId = {}
 
 ---@param entity number
 ---@param objectName string
@@ -17,13 +20,21 @@ function CreateVehicleAttachObject(entity, objectName)
 
     local objectId = GetObjectId()
     local nameHash = joaat(objectName)
-    Objects[objectId] = nameHash
+    local netId = NetworkGetNetworkIdFromEntity(entity)
+
+    Objects[objectId] = {
+        netId = netId,
+        objectName = nameHash,
+        objectId = objectId
+    }
 
     if VehicleObjects[entity] == nil then VehicleObjects[entity] = {} end
     VehicleObjects[entity][objectId] = nameHash
+    if VehicleObjectsNetId[netId] == nil then VehicleObjectsNetId[netId] = {} end
+    VehicleObjectsNetId[netId][objectId] = nameHash
 
     Entity(entity).state.attachObjectVeh = true
-    TriggerClientEvent("sf-attachobject:internal:addVehicleObject", -1, objectId, NetworkGetNetworkIdFromEntity(entity), Objects[objectId])
+    TriggerClientEvent("sf-attachobject:internal:addVehicleObject", -1, objectId, netId, nameHash)
 
     return objectId
 end
@@ -44,9 +55,11 @@ function RemoveVehicleAttachObject(entity, objectId)
     end
 
     local objectId = tostring(objectId)
+    local netId = NetworkGetNetworkIdFromEntity(entity)
 
     if Objects[objectId] and VehicleObjects[entity] and VehicleObjects[entity][objectId] then
         VehicleObjects[entity][objectId] = nil
+        VehicleObjectsNetId[netId][objectId] = nil
         Objects[objectId] = nil
 
         local noOtherObjectsFound = true
@@ -113,10 +126,13 @@ function ClearVehicleObjects(entity, objectName)
         objectNameHashed = joaat(objectName)
     end
 
+    local netId = NetworkGetNetworkIdFromEntity(entity)
+
     for objectId, hash in pairs(VehicleObjects[entity]) do
         if not objectName or (objectNameHashed == hash) then
             objsToRemove[#objsToRemove + 1] = objectId
             VehicleObjects[entity][objectId] = nil
+            VehicleObjectsNetId[netId][objectId] = nil
             Objects[objectId] = nil
         end
     end
@@ -136,16 +152,21 @@ function ClearVehicleObjects(entity, objectName)
     end
 end
 
+RegisterNetEvent("sf-attachobject:ready", function()
+    TriggerClientEvent("sf-attachobject:vehicleObjects", source, Objects)
+end)
+
 AddEventHandler("entityRemoved", function(entity)
     if not VehicleObjects[entity] then return end
     local objsToRemove = {}
-
     for objectId, _ in pairs(VehicleObjects[entity]) do
         objsToRemove[#objsToRemove + 1] = objectId
         Objects[objectId] = nil
     end
 
+    local netId = NetworkGetNetworkIdFromEntity(entity)
     VehicleObjects[entity] = nil
+    VehicleObjectsNetId[netId] = nil
 
     TriggerClientEvent("sf-attachobject:internal:removeVehicleObject", -1, objsToRemove)
 end)

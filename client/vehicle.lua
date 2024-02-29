@@ -48,6 +48,14 @@ local function removeObject(objectId)
     end
 end
 
+RegisterNetEvent("sf-attachobject:getVehicleObjects", function(data)
+    VehiclesToObjects = data
+end)
+
+RegisterNetEvent("sf-attachobject:vehicleObjects", function(data)
+    Objects = data
+end)
+
 RegisterNetEvent("sf-attachobject:internal:addVehicleObject", function(objectId, netId, objectName)
     if RegisteredObjects[objectName] == nil then return end
     local objectData = {

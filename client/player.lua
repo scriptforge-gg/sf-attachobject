@@ -19,7 +19,9 @@ local function createObj(objectId)
         end
 
         local objData = RegisteredObjects[data.objectName]
-        if objData == nil then return end
+        if objData == nil then
+            return
+        end
 
         local player = GetPlayerFromServerId(tonumber(data.playerId))
         if player == -1 and MyServerId ~= data.playerId then return false end
@@ -66,6 +68,10 @@ AddEventHandler("onResourceStop", function(resourceName)
     end
 end)
 
+RegisterNetEvent("sf-attachobject:getPlayerObjects", function(data)
+    PlayerToObjects = data
+end)
+
 RegisterNetEvent("sf-attachobject:internal:addObject", function(objectId, playerId, objectName)
     if RegisteredObjects[objectName] == nil then return end
     local objectData = {
@@ -91,6 +97,10 @@ RegisterNetEvent("sf-attachobject:internal:removeObject", function(objectId)
             removeObject(objectId[i])
         end
     end
+end)
+
+RegisterNetEvent("sf-attachobject:playerObjects", function(data)
+    Objects = data
 end)
 
 RegisterNetEvent("onPlayerJoining", function(playerId)
