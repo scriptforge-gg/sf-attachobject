@@ -8,7 +8,6 @@ Citizen.CreateThread(function()
     for i = 1, #plaIds do
         ScopedPlayers[tostring(GetPlayerServerId(plaIds[i]))] = true
     end
-    ScopedPlayers[MyServerId] = nil
 end)
 
 local function createObj(objectId)
@@ -29,6 +28,7 @@ local function createObj(objectId)
 
         if DoesEntityExist(data.ped) then
             if IsEntityVisible(data.ped) then
+                data.spawnTime = GetGameTimer()
                 local coords = GetEntityCoords(data.ped)
                 ReqModel(objData[1])
                 data.handle = CreateObjectNoOffset(objData[1], coords.x, coords.y, coords.z, false, false, false)
@@ -160,17 +160,30 @@ end)
 Citizen.CreateThread(function()
     while true do
         pcall(function()
+            local timer = GetGameTimer()
             for playerId, _ in pairs(ScopedPlayers) do
                 if PlayerToObjects[playerId] then
                     for objectId, _ in pairs(PlayerToObjects[tostring(playerId)]) do
-                        if Objects[objectId].handle == nil or (not DoesEntityExist(Objects[objectId].handle)) then
-                            createObj(objectId)
-                        else
-                            if not IsEntityAttached(Objects[objectId].handle) then
-                                if Objects[objectId].handle ~= 0 then removeObject(Objects[objectId].handle) end
-                                Objects[objectId].handle = nil
+                        local object = Objects[objectId]
+
+                        if timer - object.spawnTime < 100 then
+                            goto skip
+                        end
+
+                        local entityExist = object.handle ~= nil and DoesEntityExist(object.handle) or false
+                        if object.handle ~= nil and entityExist then
+                            if not IsEntityAttached(object.handle) then
+                                DeleteEntity_2(object.handle)
+                                object.handle = nil
+                                entityExist = false
                             end
                         end
+
+                        if not entityExist then
+                            createObj(objectId)
+                        end
+
+                        ::skip::
                     end
                 end
                 Citizen.Wait(100)

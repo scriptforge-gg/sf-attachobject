@@ -20,13 +20,11 @@ RegisterNetEvent("sf-attachobject:registeredObjects", function(objects)
 end)
 
 function ReqModel(modelHash)
-    if not HasModelLoaded(modelHash) then
-        local timeout = 0
-        RequestModel(modelHash)
-        while not HasModelLoaded(modelHash) and timeout < 60 do
-            timeout = timeout + 1
-            Citizen.Wait(0)
-        end
+    local timeout = 0
+    RequestModel(modelHash)
+    while not HasModelLoaded(modelHash) and timeout < 30 do
+        timeout = timeout + 1
+        Citizen.Wait(0)
     end
 end
 
